@@ -3,8 +3,8 @@ from peewee import SqliteDatabase, Model, CharField, FloatField, DateTimeField, 
 db = SqliteDatabase('trading_bot.db')
 
 class Stock(Model):
-    name = CharField()
-    currently_owned = BooleanField()
+    symbol = CharField()
+    owned = BooleanField()
     bought_on = DateTimeField()
     buy_price = FloatField()
     sell_price = FloatField()
@@ -13,7 +13,10 @@ class Stock(Model):
     def profit(self):
         return self.sell_price - self.buy_price
 
+    def __repr__(self):
+        return f"<Stock {self.symbol}>"
+
     class Meta:
         database = db
 
-db.create_tables([Stocks])
+db.create_tables([Stock])
