@@ -11,6 +11,7 @@ class Stock(Model):
     bought_on = DateTimeField()
     buy_price = FloatField()
     sell_price = FloatField()
+    last_high = FloatField()
 
     @property
     def profit(self):
