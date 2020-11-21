@@ -1,5 +1,6 @@
 from .console import Console
 from .api_handler import APIHandler
+from .models import Stock
 import json
 # from time import sleep
 
@@ -15,20 +16,21 @@ LOGO = logo = """████████╗██████╗  ████�
 class Bot:
     def __init__(self, api_key):
         self.api_handler = APIHandler(api_key)
-
-        try:
-            json_db = json.load(open('stocks.json', 'r'))
-        except FileNotFoundError:
-            json.dump({"owned": []}, open('stocks.json', 'w'), indent=4)
-            json_db = json.load(open('stocks.json', 'r'))
-        finally:
-            self.owned_stocks = json_db['owned']
-
         self.console = Console(LOGO, log_file_name='trading_bot')
 
     @property
-    def interesting_stocks(self):
+    def owned_stocks(self) -> list:
         pass
+
+    @property
+    def interesting_stocks(self) -> list:
+        interesting_stocks = self.owned_stocks.copy()
+        if len(interesting_stocks) < 5:
+            interesting_stocks += self.api_handler.get_interesting_stocks(
+                amount=5 - len(interesting_stocks)
+                )
+        
+        return interesting_stocks
 
     def save(self):
         json.dump(self.owned_stocks, open('stocks.json', 'w'))
