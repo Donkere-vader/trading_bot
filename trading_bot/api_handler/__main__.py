@@ -31,3 +31,9 @@ class APIHandler:
             raise WrongResponseCode(f"The requests response code was not 200, it was: {req.status_code}")
 
         return json.loads(req.content)
+
+    def buy(self, stock):
+        pass
+
+    def sell(self, stock):
+        pass
