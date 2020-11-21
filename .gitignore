@@ -1,5 +1,10 @@
+# Python specific
 __pycache__
+
+# Project sepecific
 api_config.py
-stocks.json
 *.log
+*.db
+
+# IDE specific
 .vscode
