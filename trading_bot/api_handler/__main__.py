@@ -17,7 +17,8 @@ class APIHandler:
         return [i.contents[0] for i in soup.findAll("a", {"class": "Fw(600) C($linkColor)"})[:amount]]
 
     def stock_info(self, stock, interval=1):
-        # https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=demo
+        """ Get the time series of a certain stock from the aplha vantage API.
+        The interval can be either 1, 5, 15, 30 or 60 minutes"""
         params = {
             "function": "TIME_SERIES_INTRADAY",
             "symbol": stock,
