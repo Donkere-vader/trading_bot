@@ -18,9 +18,11 @@ class Bot:
         self.api_handler = APIHandler(api_key)
         self.console = Console(LOGO, log_file_name='trading_bot')
 
+        self.console.log(self.owned_stocks)
+
     @property
     def owned_stocks(self) -> list:
-        pass
+        return [stock for stock in Stock.select().where(Stock.owned == True)]
 
     @property
     def interesting_stocks(self) -> list:
