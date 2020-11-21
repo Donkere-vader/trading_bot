@@ -1,1 +1,1 @@
-from .__main__ import Console
+from .__main__ import Console, num_to_print

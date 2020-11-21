@@ -4,6 +4,20 @@ import platform
 
 LOG_DISPLAY_LENGTH = 20
 
+def num_to_print(num):
+    color = "\u001b[30;43m"
+    prefix = " "
+    color_escape_code = "\u001b[0;0m"
+
+    if num > 0:
+        color = "\u001b[30;42m"
+        prefix = "+"
+    elif num < 0:
+        color = "\u001b[30;41m"
+        prefix = " "  # python prints the "-"
+    
+    return color + " " + (prefix + str(num)).rjust(7) + " " + color_escape_code
+
 
 class Console:
     def __init__(self, program_name, log_file_name, application_name: str = None, pin=None):
@@ -17,20 +31,6 @@ class Console:
 
     def start(self):
         self.update_console()
-
-    def num_to_print(self, num):
-        color = "\u001b[30;43m"
-        prefix = " "
-        color_escape_code = "\u001b[0;0m"
-
-        if num > 0:
-            color = "\u001b[30;42m"
-            prefix = "+"
-        elif num < 0:
-            color = "\u001b[30;41m"
-            prefix = " "  # python prints the "-"
-
-        return color + " " + (prefix + str(num)).rjust(7) + " " + color_escape_code
 
     def remove_unicode_string(self, text):
         start_idx = end_idx = -1
