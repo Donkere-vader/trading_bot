@@ -4,7 +4,7 @@ import platform
 
 LOG_DISPLAY_LENGTH = 20
 
-def num_to_print(num):
+def num_to_print(num, trail=""):
     color = "\u001b[30;43m"
     prefix = " "
     color_escape_code = "\u001b[0;0m"
@@ -16,7 +16,7 @@ def num_to_print(num):
         color = "\u001b[30;41m"
         prefix = " "  # python prints the "-"
     
-    return color + " " + (prefix + str(num)).rjust(7) + " " + color_escape_code
+    return color + " " + (prefix + str(round(num, 7)) + trail).rjust(10) + " " + color_escape_code
 
 
 class Console:
