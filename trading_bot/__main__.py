@@ -34,12 +34,6 @@ class Bot:
         
         return interesting_stocks
 
-    def save(self):
-        json.dump(self.owned_stocks, open('stocks.json', 'w'))
-
     def loop(self):
         while True:
             pass
-
-    def get_interesting_stocks(self):
-        pass
