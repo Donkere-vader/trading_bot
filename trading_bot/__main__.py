@@ -18,14 +18,24 @@ LOGO = logo = """████████╗██████╗  ████�
 class Bot:
     def __init__(self, api_key):
         self.api_handler = APIHandler(api_key)
-        self.console = Console(LOGO, log_file_name='trading_bot')
+        self.console = Console(LOGO, log_file_name='trading_bot', pin=self.console_pin)
         self._interesting_stocks = {
             "last_checked": dt(1970, 1, 1, 0, 0, 0),
             "stocks": []
         }
 
-        self.console.log(self.owned_stocks)
+        self.console.log("Starting bot...")
 
+    def console_pin(self) -> str:
+        total_height = 5
+        string = "> === [ OWNED STOCKS ] == <\n"
+        string += "Symb    Bought val -> Cur val         diff $  /      diff %\n"
+        string += "-" * 60
+        string += "\n"
+        for stock in self.owned_stocks:
+            string += stock.beauty_repr() + "\n"
+        string += "~\n" * ((total_height + 3) - string.count("\n"))
+        return string[:-1]  # remove last "\n"
 
     @property
     def owned_stocks(self) -> list:
