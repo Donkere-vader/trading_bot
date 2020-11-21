@@ -2,6 +2,9 @@ from peewee import SqliteDatabase, Model, CharField, FloatField, DateTimeField, 
 
 db = SqliteDatabase('trading_bot.db')
 
+class UnsoldStock(Exception):
+    pass
+
 class Stock(Model):
     symbol = CharField()
     owned = BooleanField()
@@ -11,6 +14,9 @@ class Stock(Model):
 
     @property
     def profit(self):
+        if not self.owned:
+            raise UnsoldStock("Trying to calculate the profit of an unsold stock won't work")
+
         return self.sell_price - self.buy_price
 
     def __repr__(self):
