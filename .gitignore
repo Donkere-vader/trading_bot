@@ -1,3 +1,5 @@
 __pycache__
 api_config.py
 stocks.json
+*.log
+.vscode
