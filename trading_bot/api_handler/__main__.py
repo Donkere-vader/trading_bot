@@ -16,12 +16,12 @@ class APIHandler:
         soup = BeautifulSoup(req.content, features="html.parser")
         return [i.contents[0] for i in soup.findAll("a", {"class": "Fw(600) C($linkColor)"})[:amount]]
 
-    def stock_info(self, stock):
+    def stock_info(self, stock, interval=1):
         # https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=demo
         params = {
             "function": "TIME_SERIES_INTRADAY",
             "symbol": stock,
-            "interval": "1min",
+            "interval": f"{interval}min",
             # "outputsize": "full",
             "apikey": self.api_key
         }
