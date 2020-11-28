@@ -1,8 +1,10 @@
 import requests
 import json
-from ..models import Stock
+# from ..models import Stock
 from bs4 import BeautifulSoup
 from datetime import datetime as dt
+# from investopedia_api import InvestopediaApi
+
 
 class WrongResponseCode(Exception):
     pass
@@ -17,6 +19,10 @@ class AlphaVantageLimitReached(Exception):
 
 
 class AlphaVantageConnectionFailure(Exception):
+    pass
+
+
+class PortfApiError(Exception):
     pass
 
 
@@ -37,12 +43,12 @@ class APIHandler:
         soup = BeautifulSoup(req.content, features="html.parser")
         return [i.contents[0] for i in soup.findAll("a", {"class": "Fw(600) C($linkColor)"})[:amount]]
 
-    def stock_info(self, stock, time_interval=1):
+    def stock_info(self, symbol, time_interval=1):
         """ Get the time series of a certain stock from the aplha vantage API.
         The time interval can be either 1, 5, 15, 30 or 60 minutes"""
         params = {
             "function": "TIME_SERIES_INTRADAY",
-            "symbol": stock,
+            "symbol": symbol,
             "interval": f"{time_interval}min",
             # "outputsize": "full",
             "apikey": self.av_api_key
@@ -81,13 +87,33 @@ class APIHandler:
         return content
 
 
-    def buy(self, stock: Stock, price):
-        
-        stock.bought(price)
+    def buy_order(self, stock, amount, order_type):
+        data = {
+            "function": "buy",
+            "amount": amount,
+            "order_type": order_type,
+            "stock": stock.symbol
+        }
 
-    def sell(self, stock: Stock):
-        
-        stock.sell(stock.worth)
+        req = requests.post(self.portf_api_url, data=data)
+
+        if req.status_code != 200 or not json.loads(req.content)['succes']:
+            raise PortfApiError(f"Status code: {req.status_code} Reponse: {json.loads(req.content)}")
+
+    def sell_order(self, stock, amount):
+        data = {
+            "function": "sell",
+            "amount": amount,
+            "order_type": order_type,
+            "stock": stock.symbol
+        }
+
+        req = requests.post(self.portf_api_url, data=data)
+
+        if req.status_code != 200 or not json.loads(req.content)['succes']:
+            raise PortfApiError(f"Status code: {req.status_code} Reponse: {json.loads(req.content)}")
+
+        stock.sold(amount)
     
     def get_portfolio(self):
         params = {
@@ -99,5 +125,8 @@ class APIHandler:
         response = json.loads(req.content)
 
         balance = response['balance']
+        owned_stocks = response['stocks']
+        orders = response['orders']
+        portf_value = response['portf_value']
 
-        return balance
+        return balance, owned_stocks, orders, portf_value

@@ -1,1 +1,1 @@
-from .__main__ import APIHandler, market, AlphaVantageDoesntKnowStock, AlphaVantageLimitReached, AlphaVantageConnectionFailure
+from .__main__ import APIHandler, AlphaVantageDoesntKnowStock, AlphaVantageLimitReached, AlphaVantageConnectionFailure

@@ -2,7 +2,7 @@ from peewee import SqliteDatabase, Model, CharField, FloatField, DateTimeField, 
 from .console import num_to_print
 from datetime import datetime as dt
 
-db = SqliteDatabase('trading_bot.db')
+# db = SqliteDatabase('trading_bot.db')
 
 class UnsoldStock(Exception):
     pass
@@ -57,5 +57,24 @@ class Stock(Model):
 
     class Meta:
         database = db
+
+
+class Order(Model):
+    """
+    Order class
+
+    For more information about order types, visit:
+    https://www.investor.gov/introduction-investing/investing-basics/how-stock-markets-work/types-orders
+    """
+
+    symbol = CharField()
+    buy_or_sell_order = BooleanField()  # buy is 1 sell is 0
+
+    order_type = CharField()
+
+    order_limit = FloatField()  # for stop- or limit- order
+    stop_limit = FloatField()  # for trailing stop orders
+
+    
 
 db.create_tables([Stock])

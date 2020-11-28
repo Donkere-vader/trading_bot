@@ -2,7 +2,7 @@ from datetime import datetime as dt
 import os
 import platform
 
-LOG_DISPLAY_LENGTH = 20
+LOG_DISPLAY_LENGTH = 15
 
 def num_to_print(num, trail=""):
     color = "\u001b[30;43m"
@@ -14,7 +14,7 @@ def num_to_print(num, trail=""):
         prefix = "+"
     elif num < 0:
         color = "\u001b[30;41m"
-        prefix = " "  # python prints the "-"
+        prefix = " "  # python prints the minus symbol so no prefix needed
     
     return color + " " + (prefix + str(round(num, 7)) + trail).rjust(10) + " " + color_escape_code
 
@@ -22,7 +22,7 @@ def num_to_print(num, trail=""):
 class Console:
     def __init__(self, program_name, log_file_name, application_name: str = None, pin=None):
         self.console_log = []
-        self.log_file = open(f'{log_file_name}.log', 'a')
+        self.log_file_name = log_file_name
         self.application_name = application_name
         self.pin = pin
         self.program_logo = "\u001b[31m" + program_name + "\u001b[0m"
@@ -52,7 +52,9 @@ class Console:
     def log(self, text):
         item = self._construct_log(text)
         self.console_log.append(item)
-        self.log_file.write(self.remove_unicode_string(item) + "\n")
+
+        with open(f'{self.log_file_name}.log', 'a') as f:
+            f.write(self.remove_unicode_string(item) + "\n")
         self.update_console()
 
     def clear_screen(self):

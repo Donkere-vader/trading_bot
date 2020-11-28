@@ -1,6 +1,7 @@
 from .console import Console
 from .api_handler import APIHandler, AlphaVantageDoesntKnowStock, AlphaVantageLimitReached, AlphaVantageConnectionFailure
-from .models import db, Stock
+# from .models import db, Stock, Order
+from .stock_order import Stock, Order
 from .portfolio import Portfolio
 from datetime import datetime as dt
 from datetime import timedelta
@@ -19,6 +20,13 @@ LOGO = logo = """████████╗██████╗  ████�
 
 class Bot:
     def __init__(self, api_key, allowed_api_calls_per_minute):
+        # set start var
+        self.balance = 0
+        self.portf_value = 0
+        self.stocks = []
+        self.orders = []
+        self.av_black_list = []
+
         self.allowed_api_calls_per_minute = allowed_api_calls_per_minute
         self.api_handler = APIHandler(api_key)
         self.portfolio = Portfolio(self.api_handler)
@@ -34,54 +42,27 @@ class Bot:
     
     def loop(self):
         while True:
-            for stock in self.portfolio['stocks']:
-                while True:
-                    try:
-                        self.console.log(f"Checking owned stock {stock.symbol}")
-                        stock_info = self.api_handler.stock_info(stock.symbol)
-                        break
-                    except (AlphaVantageLimitReached, AlphaVantageConnectionFailure) as e:
-                        if type(e) == AlphaVantageConnectionFailure:
-                            self.console.log(f"Failed to reach {self.api_handler.av_api_url}  Waiting 30 seconds to try again...")
-                            self.time_out(sec=30)
-                        elif type(e) == AlphaVantageLimitReached:
-                            self.console.log("Alpha vantage API call limit reached... Witing 30 seconds to try again...")
-                            self.time_out(sec=30)
+            # load portfolio data
+            balance, stocks, orders, portf_value = self.api_handler.get_portfolio()
+            self.stocks = []
+            for stock in stocks:
+                self.stocks.append(Stock(**stock))
+            self.orders = []
+            for order in orders:
+                self.orders.append(Order(**order))
+            self.balance = balance
+            self.portf_value = portf_value
 
-                stock.update_with_info(stock_info)
-                self.save_to_db(stock)
-                self.time_out(sec=int(60/self.allowed_api_calls_per_minute))
 
-            _owned_stocks_strings = [stock.symbol for stock in self.portfolio['stocks']]
-            for interesting_stock in self.interesting_stocks:
-                if interesting_stock in _owned_stocks_strings:
-                    continue
-                elif len(self.portfolio['stocks']) == 5:
-                    break
+            for stock in self.stocks:
+                self.console.log(f"Checking on {stock.symbol}")
+                stock_data = self.api_handler.stock_info(stock.symbol, 1)
+                self.console.log(stock_data)
+                self.time_out(sec=12)
 
-                b = False
-                while True:
-                    try:
-                        self.console.log(f"Checking interesting stock {interesting_stock}")
-                        stock_info = self.api_handler.stock_info(interesting_stock)
-                        break
-                    except (AlphaVantageDoesntKnowStock, AlphaVantageLimitReached) as e:
-                        if type(e) == AlphaVantageLimitReached:
-                            self.console.log("Alpha vantage API call limit reached... waiting 30 seconds to try again")
-                            self.time_out(sec=30)
-                        elif type(e) == AlphaVantageDoesntKnowStock:
-                            self.console.log("The Alpha vantage API doens't know this stock")
-                            self.time_out(sec=int(60/self.allowed_api_calls_per_minute))
-                            b = True
-                            break
-                if b:
-                    break
+            for symbol in self.interesting_stocks:
+                self.console.log(symbol)
 
-                new_stock = Stock(symbol=interesting_stock,)
-                new_stock.update_with_info(stock_info)
-                self.buy(new_stock, self.portfolio['balance'] * 0.20)
-                self.time_out(sec=int(60/self.allowed_api_calls_per_minute))
-    
     def time_out(self, sec):
         print(0)
         for i in range(sec):
@@ -90,26 +71,34 @@ class Bot:
             sleep(1)
         print("\033[1A          \033[10D", end="")
 
-    def buy(self, stock: Stock, price):
-        self.api_handler.buy(stock, price)
-        self.save_to_db(stock)
-        self.console.log(
-            f"Bought {stock.symbol} @ {stock.bought_value} for {stock.buy_price}"
-        )
+    def buy(self, symbol, amount):
+        # new_order = self.api_handler.buy_order(symbol, amount)
+        pass
 
     def console_pin(self) -> str:
         portfolio_info = "> === [ PORTFOLIO ] === <\n"
-        portfolio_info += f"Balance: $ {self.portfolio['balance']}"
+        portfolio_info += f"Balance: $ {round(self.balance, 2)}\nPortf value: $ {round(self.portf_value, 2)}"
         portfolio_info += "\n" * 2
 
         total_height = 5
-        string = "> === [ OWNED STOCKS ] == <\n"
-        string += "Symb    Bought val -> Cur val         diff $  /      diff %\n"
-        string += "-" * 60
+        string = "Amnt  Symb    Bought val -> Cur val         diff $  /      diff %\n"
+        string += "[ Owned stocks ] "
+        string += "-" * 49
         string += "\n"
-        for stock in self.portfolio['stocks']:
+        x = 5
+        for stock in self.stocks:
             string += stock.beauty_repr() + "\n"
-        string += "~\n" * ((total_height + 3) - string.count("\n"))
+            x -= 1
+        string += "~\n" * (x)
+
+        string += "\nAmnt  Symb    Order type\n"
+        string += "[ Orders ] " + "-" * 55 + "\n"
+        x = 5
+        for order in self.orders:
+            string += order.beauty_repr() + "\n"
+            x -= 1
+        string += "~\n" * (x)
+
         return portfolio_info + string[:-1]  # remove last "\n"
 
     def save_to_db(self, item):
