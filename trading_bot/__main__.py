@@ -6,6 +6,7 @@ from .portfolio import Portfolio
 from datetime import datetime as dt
 from datetime import timedelta
 from peewee import OperationalError
+from math import ceil
 import json
 from time import sleep
 
@@ -39,6 +40,25 @@ class Bot:
     def start(self):
         self.console.log("Starting bot...")
         self.loop()
+
+    def market_open(self):
+        # check if market is open
+        now = dt.now()
+        market_open_time = dt(now.year, now.month, now.day, 15, 30, 0)  # Amsterdam tz
+        market_close_time = dt(now.year, now.month, now.day, 22, 0, 0)  # Asmterdam tz
+        time_diff = market_open_time - now
+
+        market_open = True  #if (market_open_time - now).days != 0 and (now - market_close_time).days != 0 else False
+
+        if (market_open_time - now).days == 0 or (now - market_close_time).days == 0 or now.weekday() > 4:
+            market_open = False
+
+        if now.weekday() > 4:
+            time_diff_str = f"{7 - now.weekday()} day(s) "
+
+        time_diff_str += f"{int(time_diff.seconds / 60 // 60)}:{str(int(ceil(time_diff.seconds / 60 % 60))).rjust(2, '0')} (15:30)"
+
+        return market_open, time_diff_str
     
     def loop(self):
         while True:
@@ -53,15 +73,29 @@ class Bot:
             self.balance = balance
             self.portf_value = portf_value
 
+            market_open, time_diff_str = self.market_open()
+
+            if not market_open:
+                self.console.log(f"MARKET CLOSED -> Opens in: {time_diff_str}")
+                self.time_out(sec=60)
+                continue
 
             for stock in self.stocks:
                 self.console.log(f"Checking on {stock.symbol}")
                 stock_data = self.api_handler.stock_info(stock.symbol, 1)
-                self.console.log(stock_data)
+                if self.get_sell_signal(stock, stock_data):
+                    self.api_handler.sell_order(self, stock.id, stock.amount)
                 self.time_out(sec=12)
 
             for symbol in self.interesting_stocks:
                 self.console.log(symbol)
+
+    def get_buy_signal(self, stock, stock_data):
+        if len(self.stocks) != 2:
+            return True
+
+    def get_sell_signal(self, stock, stock_data):
+        return False
 
     def time_out(self, sec):
         print(0)
@@ -71,16 +105,18 @@ class Bot:
             sleep(1)
         print("\033[1A          \033[10D", end="")
 
-    def buy(self, symbol, amount):
-        # new_order = self.api_handler.buy_order(symbol, amount)
-        pass
-
     def console_pin(self) -> str:
         portfolio_info = "> === [ PORTFOLIO ] === <\n"
         portfolio_info += f"Balance: $ {round(self.balance, 2)}\nPortf value: $ {round(self.portf_value, 2)}"
         portfolio_info += "\n" * 2
 
-        total_height = 5
+        market_info = "> === [ MARKET ] === <\n"
+        market_open, time_diff_str = self.market_open()
+        if not market_open:
+            market_info += f"\u001b[31m[ NYSE ] CLOSED -> Opens in: {time_diff_str}\u001b[0m\n\n"
+        else:
+            market_info += f"\u001b[32m[ NYSE ] OPEN -> Open till: {time_diff_str}\u001b[0m\n\n"
+
         string = "Amnt  Symb    Bought val -> Cur val         diff $  /      diff %\n"
         string += "[ Owned stocks ] "
         string += "-" * 49
@@ -99,7 +135,7 @@ class Bot:
             x -= 1
         string += "~\n" * (x)
 
-        return portfolio_info + string[:-1]  # remove last "\n"
+        return portfolio_info + market_info + string[:-1]  # remove last "\n"
 
     def save_to_db(self, item):
         while True:

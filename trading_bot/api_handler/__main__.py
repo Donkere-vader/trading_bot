@@ -87,12 +87,13 @@ class APIHandler:
         return content
 
 
-    def buy_order(self, stock, amount, order_type):
+    def buy_order(self, symbol, amount, order_type):
         data = {
             "function": "buy",
             "amount": amount,
             "order_type": order_type,
-            "stock": stock.symbol
+            "symbol": symbol,
+            "user_id": 1
         }
 
         req = requests.post(self.portf_api_url, data=data)
@@ -100,20 +101,18 @@ class APIHandler:
         if req.status_code != 200 or not json.loads(req.content)['succes']:
             raise PortfApiError(f"Status code: {req.status_code} Reponse: {json.loads(req.content)}")
 
-    def sell_order(self, stock, amount):
+    def sell_order(self, owned_stock_id, amount):
         data = {
             "function": "sell",
             "amount": amount,
-            "order_type": order_type,
-            "stock": stock.symbol
+            "ownedstock_id": owned_stock_id,
+            "user_id": 1
         }
 
         req = requests.post(self.portf_api_url, data=data)
 
         if req.status_code != 200 or not json.loads(req.content)['succes']:
             raise PortfApiError(f"Status code: {req.status_code} Reponse: {json.loads(req.content)}")
-
-        stock.sold(amount)
     
     def get_portfolio(self):
         params = {
